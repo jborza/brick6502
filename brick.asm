@@ -26,11 +26,19 @@ define playerY $04 ;unused
 
 define playerOldX $05
 
+define ballL $10 ; screen location of the ball
+define ballH $11 ; screen location of the ball
+
+define ballX $12
+define ballY $13
+
+
 jsr init
 jsr loop
 
 init:
   jsr initPlayer
+  jsr initBall
   rts
 
 initPlayer:
@@ -43,6 +51,14 @@ initPlayer:
   ;sta playerY
   ;TODO offset X by 0xE0 (last line)
   rts
+
+initBall: 
+  ; ball start location = almost the same as player
+  ; 04F0 is above the player
+  lda #$04
+  sta ballH
+  lda #$F0
+  sta ballL
 
 loop:
   jsr readKeys
@@ -57,6 +73,7 @@ updateDisplay:
   ;copy player onto the 0x200-0x5FF "screen" 
   ;todo remove previous location of the player
   jsr drawPlayer
+  jsr drawBall
   rts
 
 drawPlayer:
@@ -74,6 +91,12 @@ drawPlayer:
   ;copy to playerOldX for future erasing
   sty playerOldX
 drawPlayerNotNeeded:
+  rts
+
+drawBall:
+  ldy ballX
+  lda #$0A ;different color
+  sta (ballL),y
   rts
 
 updatePlayer:
@@ -104,7 +127,7 @@ invalidMove:
   rts
 
 checkCollision:
-  ;todo implement collision with left and right walls
+  ;collision with left and right walls done in controls
   rts
 
 ; INPUT subroutines
