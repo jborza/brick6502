@@ -4,8 +4,8 @@ define movingRight   2
 define movingDown    4
 define movingLeft    8
 
-define leftWall     $00
-define rightWall    $1F
+define leftWall     $E0
+define rightWall    $FF
 
 ; ASCII values of key controls
 define ASCII_w      $77
@@ -45,7 +45,7 @@ initPlayer:
   ; player screen location = 0x0500 (05=H)
   lda #05
   sta playerH
-  lda #$10 ;initial X coordinate
+  lda #$F0 ;initial X coordinate
   sta playerX
   ;lda #$10; initial Y coordinate
   ;sta playerY
