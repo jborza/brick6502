@@ -3,6 +3,16 @@ define movingUp      1
 define movingRight   2
 define movingDown    4
 define movingLeft    8
+define movingUpLeft  9
+define movingUpRight 10
+define movingDownLeft 12
+define movingDownRight 6
+
+define COLOR_BLACK    $0
+define COLOR_WHITE    $1
+define COLOR_RED      $2
+define COLOR_CYAN     $3
+define COLOR_LIGHTRED $A
 
 define leftWall     $E0
 define rightWall    $FF
@@ -31,6 +41,9 @@ define ballH $11 ; screen location of the ball
 
 define ballX $12
 define ballY $13
+define ballOldPosL $14
+define ballOldPosH $15
+define ballDirection $16
 
 
 jsr init
@@ -82,11 +95,11 @@ drawPlayer:
   cpy playerX
   beq drawPlayerNotNeeded
   ;draw is needed, erase old position
-  lda #0
+  lda #COLOR_BLACK
   sta (playerL),y
   ;draw new position
   ldy playerX
-  lda #1 
+  lda #COLOR_WHITE
   sta (playerL),y
   ;copy to playerOldX for future erasing
   sty playerOldX
@@ -94,39 +107,40 @@ drawPlayerNotNeeded:
   rts
 
 drawBall:
-  jsr ballCoordinatesToScreen
-  ; todo erase old ball position
+  jsr ballCoordinatesToScreen  
   ldy #$0
-  lda #$0A ;different color
+  ;erase old ball position
+  lda #COLOR_BLACK
+  sta (ballOldPosL),y
+  ;draw new position
+  lda #COLOR_LIGHTRED ;different color
   sta (ballL),y
+  ;copy new position to old position
+  lda ballL
+  sta ballOldPosL
+  lda ballH
+  sta ballOldPosH
   rts
 
 ballCoordinatesToScreen:
   ;ball = ballY * 32 + ballX + 0x0200
-  ;high byte: ballY / 8 + 2 (display offset)
+  lda #0
+  sta ballH ; clear ballH as we'll be shifting later
   lda ballY
-  lsr
-  lsr
-  lsr
-  clc  ;clear carry before the addition
-  adc #$02 ;add 2 to get display offset 0x0200
-  sta ballH
-
-  ;low byte: (ballY % 8) * 32 + ballX
-  lda ballY
-  sec
-  modulo_ball_coord: ;while a >= 0
-  sbc #8 ;subtract 8 
-  bpl modulo_ball_coord
-  adc #8 ;add back 8, now we have the modulo result
-  asl ; * 32
-  asl
-  asl
-  asl
-  asl
-  clc ;clear carry before the addition
-  adc ballX ; + ballX
   sta ballL
+  asl ballL ;*2 max 3E
+  asl ballL ;*4 max 7C
+  asl ballL ;*8 max F8
+  asl ballL ;*16, can carry
+  rol ballH ;rotate high byte left 
+  asl ballL; *32, can carry
+  rol ballH ;rotate high byte left
+  clc ;clear carry before the addition
+  lda ballL ; ballL = ballL + ballX
+  adc ballX 
+  sta ballL 
+  inc ballH ;increment by 2 to offset by 0x200
+  inc ballH
   rts
 
 updateBall:
@@ -145,7 +159,8 @@ moveLeft:
   lda playerX
   cmp #leftWall
   beq invalidMove
-  DEC playerX
+  dec playerX
+  dec ballX
   rts
 
 moveRight:
@@ -153,7 +168,8 @@ moveRight:
   lda playerX
   cmp #rightWall
   beq invalidMove
-  INC playerX
+  inc playerX
+  inc ballX
   rts
 
 invalidMove:
