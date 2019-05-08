@@ -53,13 +53,8 @@ initPlayer:
   rts
 
 initBall: 
-  ; ball start location = almost the same as player
-  ; 04F0 is above the player
-  ;lda #$04
-  ;sta ballH
-  ;lda #$F0
-  ;sta ballL
-  lda #$04
+  ; ball start location = above, to the right of the player
+  lda #$11
   sta ballX
   lda #$1e
   sta ballY
@@ -101,39 +96,35 @@ drawPlayerNotNeeded:
 drawBall:
   jsr ballCoordinatesToScreen
   ; todo erase old ball position
-  ldy ballX
+  ldy #$0
   lda #$0A ;different color
   sta (ballL),y
   rts
 
 ballCoordinatesToScreen:
-  ;move 
-  lda #$04
-  sta ballX
-  lda #$1e
-  sta ballY
-
+  ;ball = ballY * 32 + ballX + 0x0200
   ;high byte: ballY / 8 + 2 (display offset)
   lda ballY
   lsr
   lsr
   lsr
-  clc 
-  adc #$02;add 2 to get display offset 0x0200
+  clc  ;clear carry before the addition
+  adc #$02 ;add 2 to get display offset 0x0200
   sta ballH
 
   ;low byte: (ballY % 8) * 32 + ballX
   lda ballY
   sec
-  loop: ;while a >= 0
+  modulo_ball_coord: ;while a >= 0
   sbc #8 ;subtract 8 
-  bpl loop
+  bpl modulo_ball_coord
   adc #8 ;add back 8, now we have the modulo result
   asl ; * 32
   asl
   asl
   asl
   asl
+  clc ;clear carry before the addition
   adc ballX ; + ballX
   sta ballL
   rts
