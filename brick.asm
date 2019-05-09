@@ -4,7 +4,7 @@ define movingRight   2
 define movingDown    4
 define movingLeft    8
 define movingUpLeft  9
-define movingUpRight 10
+define movingUpRight 3
 define movingDownLeft 12
 define movingDownRight 6
 
@@ -30,6 +30,9 @@ define displayH     $31
 
 define leftWall     $E0
 define rightWall    $FF
+
+define AREA_WIDTH $20
+define AREA_HEIGHT $20
 
 ; ASCII values of key controls
 define ASCII_w      $77
@@ -58,7 +61,6 @@ define ballY $13
 define ballOldPosL $14
 define ballOldPosH $15
 define ballDirection $16
-
 
 jsr init
 jsr loop
@@ -117,6 +119,8 @@ initBall:
   sta ballX
   lda #$1e
   sta ballY
+  lda #movingUpRight
+  sta ballDirection
   rts
 
 loop:
@@ -124,6 +128,7 @@ loop:
   jsr checkCollision
   jsr updatePlayer
   jsr updateDisplay
+  jsr updateBall
   jmp loop
 
 ; UPDATE subroutines
@@ -190,14 +195,37 @@ ballCoordinatesToScreen:
   rts
 
 updateBall:
-  lda ballDirection
-  cmp #movingUpRight
+  lda #movingUp
+  bit ballDirection
+  bne up
+  lda #movingDown
+  bit ballDirection
+  bne down
+  up:
+  dec ballY
+  jmp checkLeftRight
+  down:
+  inc ballY
+  checkLeftRight:
+  lda #movingLeft
+  bit ballDirection
+  bne left
+  lda #movingRight
+  bit ballDirection
+  bne right
+  left:
+  dec ballX
+  jmp end_direction_check
+  right:
+  inc ballX
+  end_direction_check:
   ;move up right
   ;check collision with right wall
   ;increment ballX
   ;check collision with the ceiling
   ;decrement ballY
   ;bne 
+  brk
   rts
 
 updatePlayer:
