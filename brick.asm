@@ -12,7 +12,21 @@ define COLOR_BLACK    $0
 define COLOR_WHITE    $1
 define COLOR_RED      $2
 define COLOR_CYAN     $3
-define COLOR_LIGHTRED $A
+define COLOR_PURPLE   $4
+define COLOR_GREEN    $5
+define COLOR_BLUE     $6
+define COLOR_YELLOW   $7
+define COLOR_ORANGE   $8
+
+define COLOR_PLAYER $6
+define COLOR_BALL $1
+
+; Breakout used yellow, green, orange, red as brick colors
+; that is progression 
+
+define DISPLAY_START $200
+define displayL     $30
+define displayH     $31
 
 define leftWall     $E0
 define rightWall    $FF
@@ -50,8 +64,53 @@ jsr init
 jsr loop
 
 init:
+  jsr initField
   jsr initPlayer
   jsr initBall
+  rts
+
+initField:
+define fieldL $30
+define fieldH $31
+define blocks_count $40
+  lda #$2 ;todo could be done with a constant and dcb
+  sta fieldH
+  ;two rows of red
+  ;for (y = 3F; y >= 0; y--) $200+y=COLOR_RED
+  lda #COLOR_RED
+  ldy #blocks_count 
+  loop_red_field:
+  dey 
+  sta (fieldL),y
+  bne loop_red_field
+  ;two rows of orange
+  lda #$40 ;start offset for row two
+  sta fieldL
+  lda #COLOR_ORANGE
+  ldy #blocks_count
+  loop_orange_field:
+  dey
+  sta (fieldL),y
+  bne loop_orange_field
+  ;two rows of green
+  lda #$80
+  sta fieldL
+  lda #COLOR_GREEN
+  ldy #blocks_count
+  loop_green_field:
+  dey
+  sta (fieldL),y
+  bne loop_green_field 
+  ;two rows of yellow
+  lda #$C0
+  sta fieldL
+  lda #COLOR_YELLOW
+  ldy #blocks_count
+  loop_yellow_field:
+  dey
+  sta (fieldL),y
+  bne loop_yellow_field 
+
   rts
 
 initPlayer:
@@ -60,9 +119,6 @@ initPlayer:
   sta playerH
   lda #$F0 ;initial X coordinate
   sta playerX
-  ;lda #$10; initial Y coordinate
-  ;sta playerY
-  ;TODO offset X by 0xE0 (last line)
   rts
 
 initBall: 
@@ -99,7 +155,7 @@ drawPlayer:
   sta (playerL),y
   ;draw new position
   ldy playerX
-  lda #COLOR_WHITE
+  lda #COLOR_PLAYER
   sta (playerL),y
   ;copy to playerOldX for future erasing
   sty playerOldX
@@ -113,7 +169,7 @@ drawBall:
   lda #COLOR_BLACK
   sta (ballOldPosL),y
   ;draw new position
-  lda #COLOR_LIGHTRED ;different color
+  lda #COLOR_BALL ;different color
   sta (ballL),y
   ;copy new position to old position
   lda ballL
@@ -144,6 +200,14 @@ ballCoordinatesToScreen:
   rts
 
 updateBall:
+  lda ballDirection
+  cmp #movingUpRight
+  ;move up right
+  ;check collision with right wall
+  ;increment ballX
+  ;check collision with the ceiling
+  ;decrement ballY
+  ;bne 
   rts
 
 updatePlayer:
