@@ -195,38 +195,55 @@ ballCoordinatesToScreen:
   rts
 
 updateBall:
-  lda #movingUp
-  bit ballDirection
-  bne up
-  lda #movingDown
-  bit ballDirection
-  bne down
-  up:
-  dec ballY
-  jmp checkLeftRight
-  down:
-  inc ballY
-  checkLeftRight:
-  lda #movingLeft
-  bit ballDirection
-  bne left
-  lda #movingRight
-  bit ballDirection
-  bne right
-  left:
-  dec ballX
-  jmp end_direction_check
-  right:
-  inc ballX
-  end_direction_check:
-  ;move up right
-  ;check collision with right wall
-  ;increment ballX
-  ;check collision with the ceiling
-  ;decrement ballY
-  ;bne 
-  brk
-  rts
+define horizontalMovementRight $1
+define verticalMovementDown $2
+define AREA_MIN_X $0
+define AREA_MAX_X $1F
+define AREA_MIN_Y $0
+define AREA_MAX_Y $1F
+horizontalCheck:
+    lda #horizontalMovementRight
+    bit ballDirection           ;check if direction to the right
+    bne right
+left:
+    lda ballX
+    cmp #AREA_MIN_X
+    beq switchHorizontalDirection 
+    dec ballX                   ; no left wall, x-- and go to vertical
+    jmp verticalCheck
+right:
+    lda ballX
+    cmp #AREA_MAX_X             ;check for right wall
+    beq switchHorizontalDirection
+    inc ballX                   ; no right wall, x++ and go to vertical check
+    jmp verticalCheck           ;
+switchHorizontalDirection:
+    lda ballDirection           ; toggle horizontal bit 
+    eor #horizontalMovementRight
+    sta ballDirection
+    jmp horizontalCheck         ; and check again for the new direction
+verticalCheck:
+    lda #verticalMovementDown
+    bit ballDirection           ;check if direction to the down
+    bne down
+up:
+    lda ballY
+    cmp #AREA_MIN_Y
+    beq switchVerticalDirection
+    dec ballY                   ; no top wall
+    jmp endUpdateBall
+down:
+    lda ballY
+    cmp #AREA_MAX_Y
+    beq switchVerticalDirection
+    inc ballY                   ; no bottom wall
+    jmp endUpdateBall
+switchVerticalDirection:
+    lda ballDirection           ; toggle horizontal bit 
+    eor #verticalMovementDown
+    sta ballDirection
+    jmp verticalCheck         ; and check again for the new direction
+endUpdateBall:
 
 updatePlayer:
   ldx playerDirection
