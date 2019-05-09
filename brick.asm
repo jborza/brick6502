@@ -75,42 +75,32 @@ define fieldH $31
 define blocks_count $40
   lda #$2 ;todo could be done with a constant and dcb
   sta fieldH
-  ;two rows of red
-  ;for (y = 3F; y >= 0; y--) $200+y=COLOR_RED
+  ;red, orange, green, yellow
   lda #COLOR_RED
-  ldy #blocks_count 
-  loop_red_field:
-  dey 
-  sta (fieldL),y
-  bne loop_red_field
-  ;two rows of orange
-  lda #$40 ;start offset for row two
-  sta fieldL
+  ldx #$00 ;
+  jsr drawFieldRows
   lda #COLOR_ORANGE
-  ldy #blocks_count
-  loop_orange_field:
-  dey
-  sta (fieldL),y
-  bne loop_orange_field
-  ;two rows of green
-  lda #$80
-  sta fieldL
+  ldx #$40 ; start index for row 2
+  jsr drawFieldRows
   lda #COLOR_GREEN
-  ldy #blocks_count
-  loop_green_field:
-  dey
-  sta (fieldL),y
-  bne loop_green_field 
-  ;two rows of yellow
-  lda #$C0
-  sta fieldL
+  ldx #$80 ; row 3
+  jsr drawFieldRows
   lda #COLOR_YELLOW
+  ldx #$C0 ; row 4
+  jsr drawFieldRows
+  rts
+  
+drawFieldRows:
+  ;subroutine to fill a field row
+  ;for (y = X; y >= 0; y--) $200+y=color
+  ;color loaded in A
+  ;start index loaded in X
+  stx fieldL
   ldy #blocks_count
-  loop_yellow_field:
+  loop_field_block:
   dey
   sta (fieldL),y
-  bne loop_yellow_field 
-
+  bne loop_field_block 
   rts
 
 initPlayer:
