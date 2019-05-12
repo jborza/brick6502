@@ -3,10 +3,10 @@ define movingUp      1
 define movingRight   2
 define movingDown    4
 define movingLeft    8
-define movingUpLeft  9
-define movingUpRight 3
-define movingDownLeft 12
-define movingDownRight 6
+define movingUpLeft  $0
+define movingUpRight $1
+define movingDownLeft $2
+define movingDownRight $3
 
 define COLOR_BLACK    $0
 define COLOR_WHITE    $1
@@ -119,7 +119,7 @@ initBall:
   sta ballX
   lda #$1e
   sta ballY
-  lda #movingUpRight
+  lda #movingUpLeft
   sta ballDirection
   rts
 
@@ -128,7 +128,8 @@ loop:
   jsr checkCollision
   jsr updatePlayer
   jsr updateDisplay
-  jsr updateBall
+  jsr updateBallNoClip
+  jsr checkBallWallCollision
   jmp loop
 
 ; UPDATE subroutines
@@ -194,56 +195,73 @@ ballCoordinatesToScreen:
   inc ballH
   rts
 
-updateBall:
 define horizontalMovementRight $1
 define verticalMovementDown $2
-define AREA_MIN_X $0
-define AREA_MAX_X $1F
-define AREA_MIN_Y $0
-define AREA_MAX_Y $1F
-horizontalCheck:
-    lda #horizontalMovementRight
-    bit ballDirection           ;check if direction to the right
-    bne right
+updateBallNoClip:
+  lda #horizontalMovementRight
+  bit ballDirection           ;check if direction to the right
+  bne right
 left:
-    lda ballX
-    cmp #AREA_MIN_X
-    beq switchHorizontalDirection 
-    dec ballX                   ; no left wall, x-- and go to vertical
-    jmp verticalCheck
+  dec ballX 
+  jmp verticalCheck
 right:
-    lda ballX
-    cmp #AREA_MAX_X             ;check for right wall
-    beq switchHorizontalDirection
-    inc ballX                   ; no right wall, x++ and go to vertical check
-    jmp verticalCheck           ;
-switchHorizontalDirection:
-    lda ballDirection           ; toggle horizontal bit 
-    eor #horizontalMovementRight
-    sta ballDirection
-    jmp horizontalCheck         ; and check again for the new direction
+  inc ballX
 verticalCheck:
-    lda #verticalMovementDown
-    bit ballDirection           ;check if direction to the down
-    bne down
+  lda #verticalMovementDown
+  bit ballDirection           ;check if going down
+  bne down
 up:
-    lda ballY
-    cmp #AREA_MIN_Y
-    beq switchVerticalDirection
-    dec ballY                   ; no top wall
-    jmp endUpdateBall
+  dec ballY
+  jmp endUpdateBallNoClip
 down:
-    lda ballY
-    cmp #AREA_MAX_Y
-    beq switchVerticalDirection
-    inc ballY                   ; no bottom wall
-    jmp endUpdateBall
-switchVerticalDirection:
-    lda ballDirection           ; toggle horizontal bit 
-    eor #verticalMovementDown
-    sta ballDirection
-    jmp verticalCheck         ; and check again for the new direction
-endUpdateBall:
+  inc ballY
+endUpdateBallNoClip:
+  rts
+
+;check if the ball should bounce off walls
+checkBallWallCollision:
+leftWallCheck:
+  lda ballX
+  bpl rightWallCheck
+  ;hit left wall
+  jsr toggleHorizontalDirection
+  ;move right two places
+  inc ballX
+  inc ballX
+rightWallCheck:
+  cmp #$20   ;over the right wall
+  bne topWallCheck
+  ;hit right wall
+  jsr toggleHorizontalDirection
+  dec ballX
+  dec ballX
+topWallCheck:
+  lda ballY
+  bpl bottomWallCheck
+  ;hit top wall
+  jsr toggleVerticalDirection
+  inc ballY
+  inc ballY
+bottomWallCheck:
+  cmp #$20
+  bne endCheckBallWallCollision
+  jsr toggleVerticalDirection
+  dec ballY
+  dec ballY
+endCheckBallWallCollision:
+  rts
+
+toggleHorizontalDirection:
+  lda ballDirection           ; toggle horizontal bit 
+  eor #horizontalMovementRight
+  sta ballDirection
+  rts
+
+toggleVerticalDirection:
+  lda ballDirection           ; toggle vertical bit 
+  eor #verticalMovementDown
+  sta ballDirection
+  rts
 
 updatePlayer:
   ldx playerDirection
